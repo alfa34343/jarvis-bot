@@ -23,8 +23,8 @@ from telegram.ext import (
 #   CONFIGURATION — FILL THESE IN
 # ============================================================
 
-TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN_HERE"   # From BotFather
-GROQ_API_KEY       = "YOUR_GROQ_API_KEY_HERE"          # From console.groq.com
+TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN_HERE"     # From BotFather
+GROQ_API_KEY       = "YOUR_GROQ_API_KEY_HERE"           # From console.groq.com
 NEWS_API_KEY       = "YOUR_NEWS_API_KEY_HERE"           # From newsapi.org (free)
 MASTER_CHAT_ID     = None   # Leave None first — bot will tell you your ID on /start
 
