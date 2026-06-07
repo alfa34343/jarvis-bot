@@ -5,8 +5,7 @@ import datetime
 import requests
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 TELEGRAM_BOT_TOKEN = "8806683131:AAEb_SHZtJls5yz_3oeI-mYeh0hQgze-gt0"
 GROQ_API_KEY = "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"
@@ -65,38 +64,38 @@ def get_news():
     try:
         r = requests.get(f"https://newsapi.org/v2/top-headlines?country=in&pageSize=1&apiKey={NEWS_API_KEY}", timeout=10)
         a = r.json()["articles"][0]
-        return f"📰 *Top News, Master:*\n\n*{a['title']}*\n_{a['source']['name']}_\n\n{a.get('description','')}"
+        return f"Top News Master:\n\n{a['title']}\n{a['source']['name']}\n\n{a.get('description','')}"
     except Exception as e:
         return f"Could not fetch news Master: {e}"
 
-async def start(update, context):
-    await update.message.reply_text(f"🤖 *JARVIS ONLINE*\n\nGood day Master Lakshya.\n\nYour Chat ID: `{update.effective_chat.id}`\n\nType /help for commands.", parse_mode="Markdown")
+def start(update, context):
+    update.message.reply_text(f"JARVIS ONLINE\n\nGood day Master Lakshya. All systems operational.\n\nYour Chat ID: {update.effective_chat.id}\n\nType /help for commands.")
 
-async def help_cmd(update, context):
+def help_cmd(update, context):
     if not is_master(update): return
-    await update.message.reply_text("🤖 *JARVIS Commands*\n\n/news - Top news\n/tasks - Your tasks\n/addtask - Add task\n/cleartasks - Clear tasks\n/exam - Practice question\n/draft - Draft message\n\nOr just talk to me!", parse_mode="Markdown")
+    update.message.reply_text("JARVIS Commands\n\n/news - Top news\n/tasks - Your tasks\n/addtask - Add task\n/cleartasks - Clear tasks\n/exam - Practice question\n/draft - Draft message\n\nOr just talk to me!")
 
-async def news_cmd(update, context):
+def news_cmd(update, context):
     if not is_master(update): return
-    await update.message.reply_text(get_news(), parse_mode="Markdown")
+    update.message.reply_text(get_news())
 
-async def tasks_cmd(update, context):
+def tasks_cmd(update, context):
     if not is_master(update): return
     tasks = load_tasks()
     if not tasks:
-        await update.message.reply_text("No tasks Master. Use /addtask Study Math 5PM")
+        update.message.reply_text("No tasks Master. Use /addtask Study Math 5PM")
         return
-    msg = "📋 *Tasks, Master:*\n\n"
+    msg = "Your Tasks Master:\n\n"
     for i, t in enumerate(tasks, 1):
-        msg += f"⏳ *{i}.* {t['task']}"
-        if t.get("time"): msg += f" — _{t['time']}_"
+        msg += f"{i}. {t['task']}"
+        if t.get("time"): msg += f" — {t['time']}"
         msg += "\n"
-    await update.message.reply_text(msg, parse_mode="Markdown")
+    update.message.reply_text(msg)
 
-async def addtask_cmd(update, context):
+def addtask_cmd(update, context):
     if not is_master(update): return
     if not context.args:
-        await update.message.reply_text("Example: /addtask Study Math 5:00 PM")
+        update.message.reply_text("Example: /addtask Study Math 5:00 PM")
         return
     args = context.args
     time_str = ""
@@ -108,52 +107,53 @@ async def addtask_cmd(update, context):
     tasks = load_tasks()
     tasks.append({"task": task_str, "time": time_str})
     save_tasks(tasks)
-    await update.message.reply_text(f"✅ Task added Master!\n*{task_str}*" + (f"\nTime: {time_str}" if time_str else ""), parse_mode="Markdown")
+    update.message.reply_text(f"Task added Master!\n{task_str}" + (f"\nTime: {time_str}" if time_str else ""))
 
-async def cleartasks_cmd(update, context):
+def cleartasks_cmd(update, context):
     if not is_master(update): return
     save_tasks([])
-    await update.message.reply_text("🗑️ All tasks cleared Master.")
+    update.message.reply_text("All tasks cleared Master.")
 
-async def exam_cmd(update, context):
+def exam_cmd(update, context):
     if not is_master(update): return
-    await update.message.reply_text("📚 Generating question Master...")
+    update.message.reply_text("Generating question Master...")
     r = ask_groq("Give one hard CAT or IBPS exam question with 4 options A B C D and answer with explanation.")
-    await update.message.reply_text(f"📚 *Question:*\n\n{r}", parse_mode="Markdown")
+    update.message.reply_text(r)
 
-async def draft_cmd(update, context):
+def draft_cmd(update, context):
     if not is_master(update): return
     if not context.args:
-        await update.message.reply_text("Example: /draft message to Rohan about meeting tomorrow")
+        update.message.reply_text("Example: /draft message to Rohan about meeting tomorrow")
         return
     req = " ".join(context.args)
-    await update.message.reply_text("✍️ Drafting Master...")
+    update.message.reply_text("Drafting Master...")
     r = ask_groq(f"Draft this for Master Lakshya: {req}. Make it professional and ready to send.")
-    await update.message.reply_text(f"✍️ *Draft:*\n\n{r}", parse_mode="Markdown")
+    update.message.reply_text(r)
 
-async def handle_msg(update, context):
+def handle_msg(update, context):
     if not is_master(update):
-        await update.message.reply_text("🔒 Access Denied.")
+        update.message.reply_text("Access Denied. I serve only Master Lakshya.")
         return
-    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
     r = ask_groq(update.message.text)
-    await update.message.reply_text(r)
+    update.message.reply_text(r)
 
 def main():
     logging.basicConfig(level=logging.INFO)
     threading.Thread(target=run_server, daemon=True).start()
-    print("JARVIS ONLINE — Master Lakshya's personal AI is live.")
-    app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_cmd))
-    app.add_handler(CommandHandler("news", news_cmd))
-    app.add_handler(CommandHandler("tasks", tasks_cmd))
-    app.add_handler(CommandHandler("addtask", addtask_cmd))
-    app.add_handler(CommandHandler("cleartasks", cleartasks_cmd))
-    app.add_handler(CommandHandler("exam", exam_cmd))
-    app.add_handler(CommandHandler("draft", draft_cmd))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_msg))
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    print("JARVIS ONLINE")
+    updater = Updater(TELEGRAM_BOT_TOKEN)
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("help", help_cmd))
+    dp.add_handler(CommandHandler("news", news_cmd))
+    dp.add_handler(CommandHandler("tasks", tasks_cmd))
+    dp.add_handler(CommandHandler("addtask", addtask_cmd))
+    dp.add_handler(CommandHandler("cleartasks", cleartasks_cmd))
+    dp.add_handler(CommandHandler("exam", exam_cmd))
+    dp.add_handler(CommandHandler("draft", draft_cmd))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_msg))
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == "__main__":
     main()
